@@ -1,7 +1,8 @@
+
 'use server';
 
 /**
- * @fileOverview An AI agent that analyzes an image and provides a descriptive text response.
+ * @fileOverview An AI agent that analyzes an image to extract text and answer questions.
  *
  * - analyzeImage - A function that handles the image analysis process.
  * - AnalyzeImageInput - The input type for the analyzeImage function.
@@ -21,7 +22,7 @@ const AnalyzeImageInputSchema = z.object({
 export type AnalyzeImageInput = z.infer<typeof AnalyzeImageInputSchema>;
 
 const AnalyzeImageOutputSchema = z.object({
-  analysisResult: z.string().describe('The descriptive text analysis of the image content.'),
+  analysisResult: z.string().describe('The extracted text from the image, and if a question is present, the answer to that question.'),
 });
 export type AnalyzeImageOutput = z.infer<typeof AnalyzeImageOutputSchema>;
 
@@ -33,11 +34,11 @@ const analyzeImagePrompt = ai.definePrompt({
   name: 'analyzeImagePrompt',
   input: {schema: AnalyzeImageInputSchema},
   output: {schema: AnalyzeImageOutputSchema},
-  prompt: `You are an AI assistant that analyzes images and provides a descriptive text response about the image content.
+  prompt: `You are an AI assistant specialized in extracting text from images and answering questions based on that text. Your primary goal is to accurately read all text within the image.
 
-  Analyze the following image and provide a detailed description, including identification of objects and relevant background information. If the image is a MCQ question then give the answer for it.
+If the image contains a question, especially a multiple-choice question (MCQ), identify the question and its options, and then provide the correct answer. Focus on accuracy for text extraction and answering questions. Do not provide general descriptions of the image.
 
-  Image: {{media url=photoDataUri}}`,
+Image: {{media url=photoDataUri}}`,
 });
 
 const analyzeImageFlow = ai.defineFlow(
@@ -48,6 +49,11 @@ const analyzeImageFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await analyzeImagePrompt(input);
-    return output!;
+    // Handle cases where the model might return an empty or unexpected response
+    if (!output || !output.analysisResult) {
+      // Consider throwing a more specific error or returning a default value
+      throw new Error('AI analysis did not return the expected result. The image might be unclear or contain content that could not be processed.');
+    }
+    return output;
   }
 );

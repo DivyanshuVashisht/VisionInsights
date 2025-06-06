@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Camera, Upload, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { analyzeImage } from '@/ai/flows/analyze-image';
 import type { AnalyzeImageOutput } from '@/ai/flows/analyze-image';
+import { useToast } from "@/hooks/use-toast";
 
 export default function ImageInsightsPage() {
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -17,6 +18,7 @@ export default function ImageInsightsPage() {
   const [analysisResult, setAnalysisResult] = useState<AnalyzeImageOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const captureInputRef = useRef<HTMLInputElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -31,7 +33,48 @@ export default function ImageInsightsPage() {
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImageDataUri(reader.result as string);
+        const base64Image = reader.result as string;
+        const img = new Image();
+        img.onload = () => {
+          const MAX_WIDTH = 1024;
+          const MAX_HEIGHT = 1024;
+          let { width, height } = img;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = Math.round((width * MAX_HEIGHT) / height);
+              height = MAX_HEIGHT;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressedDataUri = canvas.toDataURL('image/jpeg', 0.7); // Compress to 70% quality JPEG
+            setImageDataUri(compressedDataUri);
+            if (compressedDataUri.length < base64Image.length) {
+                toast({ title: "Image Compressed", description: `Image size reduced for optimized analysis.` });
+            }
+          } else {
+            setError("Failed to process image for compression. Using original image.");
+            setImageDataUri(base64Image); // Use original if compression fails
+          }
+        };
+        img.onerror = () => {
+          setError("Failed to load image for processing.");
+          setImageDataUri(null);
+          setSelectedImageFile(null);
+        };
+        img.src = base64Image;
       };
       reader.onerror = () => {
         setError("Failed to read image file.");
@@ -62,6 +105,9 @@ export default function ImageInsightsPage() {
       let errorMessage = "Failed to analyze image. Please try again.";
       if (err instanceof Error) {
         errorMessage = err.message || errorMessage;
+        if (errorMessage.includes("INTERNAL")) {
+            errorMessage = "The AI model could not process the request. This might be due to safety filters or an issue with the image content. Try a different image or adjust the image content."
+        }
       }
       setError(errorMessage);
     } finally {
@@ -129,7 +175,7 @@ export default function ImageInsightsPage() {
             </div>
           )}
 
-          {selectedImageFile && (
+          {selectedImageFile && imageDataUri && (
              <div className="flex justify-center mt-6">
                 <Button
                     onClick={handleAnalyze}

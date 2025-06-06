@@ -24,7 +24,7 @@ export type AnalyzeMCQQuestionInput = z.infer<typeof AnalyzeMCQQuestionInputSche
 
 const AnalyzeMCQQuestionOutputSchema = z.object({
   answer: z.string().describe('The correct answer to the multiple choice question.'),
-  reason: z.string().describe('The reasoning behind the answer.'),
+  // reason: z.string().describe('The reasoning behind the answer.'),
 });
 export type AnalyzeMCQQuestionOutput = z.infer<typeof AnalyzeMCQQuestionOutputSchema>;
 
