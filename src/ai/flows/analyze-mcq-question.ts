@@ -24,7 +24,7 @@ export type AnalyzeMCQQuestionInput = z.infer<typeof AnalyzeMCQQuestionInputSche
 
 const AnalyzeMCQQuestionOutputSchema = z.object({
   answer: z.string().describe('The correct answer to the multiple choice question.'),
-  // reason: z.string().describe('The reasoning behind the answer.'),
+  reason: z.string().describe('The reasoning behind the answer.'),
 });
 export type AnalyzeMCQQuestionOutput = z.infer<typeof AnalyzeMCQQuestionOutputSchema>;
 
@@ -40,7 +40,7 @@ const prompt = ai.definePrompt({
 
   You will extract the text from that text to better understand the questions and options provided.
 
-  You will identify the correct answer(s) to the question as quickly as possible. No explanations are required, just ensure the accuracy of your answers.
+  You will identify the correct answer(s) to the question with a small explanation.
 
 Image: {{media url=photoDataUri}}`,
 });
