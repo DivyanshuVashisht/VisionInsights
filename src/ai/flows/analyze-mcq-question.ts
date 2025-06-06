@@ -38,7 +38,9 @@ const prompt = ai.definePrompt({
   output: {schema: AnalyzeMCQQuestionOutputSchema},
   prompt: `You are an expert Google Cloud Certifications test taker. You are given an image of a multiple choice question.
 
-You will identify the correct answer(s) to the question and explain why that answer is correct.
+  You will extract the text from that text to better understand the questions and options provided.
+
+  You will identify the correct answer(s) to the question as quickly as possible. No explanations are required, just ensure the accuracy of your answers.
 
 Image: {{media url=photoDataUri}}`,
 });
